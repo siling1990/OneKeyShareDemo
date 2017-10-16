@@ -1,0 +1,4 @@
+<resources>
+    <string name="share_default_iconurl">默认分享图片的链接，一般为app logo</string>
+    <string name="check_install_qq">请检查是否安装QQ</string>
+</resources>
