@@ -22,11 +22,15 @@ import android.widget.Toast;
 import com.stone.onkeyshare.R;
 import com.stone.onkeyshare.entity.ShareInfo;
 import com.stone.onkeyshare.listener.SharePlatformListener;
+import com.stone.onkeyshare.utils.Log;
 import com.stone.onkeyshare.utils.ShareUtil;
 import com.tencent.mm.opensdk.modelmsg.SendMessageToWX;
 import com.tencent.mm.opensdk.modelmsg.WXMediaMessage;
 import com.tencent.mm.opensdk.modelmsg.WXTextObject;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
+import com.tencent.tauth.IUiListener;
+import com.tencent.tauth.UiError;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -35,6 +39,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import static com.stone.onkeyshare.utils.ShareUtil.RESULT_CANCEL;
+import static com.stone.onkeyshare.utils.ShareUtil.RESULT_ERROR;
+import static com.stone.onkeyshare.utils.ShareUtil.RESULT_SUCCESS;
 
 /**
  * Created by Stone on 2017/9/22.
@@ -166,21 +174,21 @@ public class ShareActivity extends Activity {
         splitTransaction(transaction);
         String message="";
         switch(result){
-            case ShareUtil.RESULT_CANCEL:
+            case RESULT_CANCEL:
                 if(sharePlatformListener!=null){
                     sharePlatformListener.onCancel(mSharedChannel);
                 }else{
                     message="分享取消";
                 }
                 break;
-            case ShareUtil.RESULT_ERROR:
+            case RESULT_ERROR:
                 if(sharePlatformListener!=null){
                     sharePlatformListener.onError(mSharedChannel,mSharedMsg);
                 }else{
                     message="分享失败";
                 }
                 break;
-            case ShareUtil.RESULT_SUCCESS:
+            case RESULT_SUCCESS:
                 if(sharePlatformListener!=null){
                     sharePlatformListener.onComplete(mSharedChannel);
                 }else{
@@ -460,7 +468,7 @@ public class ShareActivity extends Activity {
 
         if (!isThumbDataWrong()) {
             mShareRunnable.run();
-        } else if (TextUtils.isEmpty(mShareInfo.getIconUrl())) {
+        } else if (TextUtils.isEmpty(mShareInfo.getImageUrl())) {
             shareWithDefaultThumbData();
         } else {
             shareWithNetThumbData();
@@ -472,7 +480,7 @@ public class ShareActivity extends Activity {
 //                .equals(ClickConstant.CLICK_SHARE_VALUE_HB)
 //                ? R.drawable.share_wx_hb
 //                : R.drawable.share_default_icon;
-        int tmp = R.mipmap.ic_launcher;
+        int tmp = R.drawable.ic_launcher;
         Drawable drawable = ContextCompat.getDrawable(thisActivity, tmp);
         if (drawable == null) return;
         Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
@@ -489,81 +497,8 @@ public class ShareActivity extends Activity {
     }
 
     private void shareWithNetThumbData() {
-        HttpGroup.OnCommonListener listener = new HttpGroup.OnCommonListener() {
-            @Override
-            public void onReady(HttpGroup.HttpSettingParams httpSettingParams) {
-
-            }
-
-            @Override
-            public void onError(HttpError error) {
-                shareWithDefaultThumbData();
-            }
-
-            @Override
-            public void onEnd(HttpResponse httpResponse) {
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inJustDecodeBounds = true;
-                File file = httpResponse.getSaveFile();
-                byte[] data = null;
-                if (file != null) {
-                    BitmapFactory.decodeFile(file.getPath(), options);
-                } else {
-                    data = httpResponse.getInputData();
-                    if (data != null) {
-                        BitmapFactory.decodeByteArray(data, 0, data.length, options);
-                    } else {
-                        shareWithDefaultThumbData();
-                        return;
-                    }
-                }
-                int width = options.outWidth;
-                int height = options.outHeight;
-                if (width > height) {
-                    options.inSampleSize = Math.round((float) width / THUMB_IMAGE_SIZE);
-                } else {
-                    options.inSampleSize = Math.round((float) height / THUMB_IMAGE_SIZE);
-                }
-                options.inJustDecodeBounds = false;
-                Bitmap bitmap;
-                if (data != null) {
-                    bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
-                } else {
-                    bitmap = BitmapFactory.decodeFile(file.getPath(), options);
-                }
-                if (bitmap == null) {
-                    shareWithDefaultThumbData();
-                    return;
-                }
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-                int rate = 100;
-                while (isThumbDataWrong() && rate > 0) {
-                    baos.reset();
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, rate, baos);
-                    mThumbData = baos.toByteArray();
-                    rate = rate - 15;
-                }
-
-                if (isThumbDataWrong()) {
-                    shareWithDefaultThumbData();
-                    return;
-                }
-                if (mShareRunnable != null) {
-                    mShareRunnable.run();
-                }
-            }
-        };
-
-        HttpSetting httpSetting = new HttpSetting();
-        httpSetting.setUrl(mShareInfo.getIconUrl());
-        httpSetting.setConnectTimeout(5000);
-        httpSetting.setAttempts(1);
-        httpSetting.setCacheMode(HttpSetting.CACHE_MODE_AUTO);
-        httpSetting.setType(HttpGroupSetting.TYPE_IMAGE);
-        httpSetting.setListener(listener);
-        httpSetting.setNeedShareImage(false);
-        HttpGroupUtils.getHttpGroupaAsynPool(HttpGroupSetting.TYPE_IMAGE).add(httpSetting);
+        //使用应用自带的网络组建下载
+        // mThumbData
     }
 
     private void shareBlock() {
@@ -575,7 +510,7 @@ public class ShareActivity extends Activity {
 
     private void dealResult() {
         //TODO
-        setSharedResult(ShareUtil.RESULT_ERROR,mSelectedChannel,"分享失败！");
+        setSharedResult(RESULT_ERROR,mSelectedChannel,"分享失败！");
     }
 
     private void setBigImgThumbData() {
@@ -594,8 +529,8 @@ public class ShareActivity extends Activity {
             if (Log.D) {
                 e.printStackTrace();
             }
-            bitmap = BitmapFactory.decodeResource(getResources(),
-                    R.drawable.share_qr_default);
+            //分享默认图，建议自定义
+            bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_launcher);
         }
 
         if (bitmap == null) return;
@@ -656,8 +591,7 @@ public class ShareActivity extends Activity {
         super.onResume();
 
         if (mSharedResult != 0) {
-            if (mSharedResult == ShareUtil.RESULT_SUCCESS
-                    && !TextUtils.isEmpty(mShareInfo.getCpsUrl())) {
+            if (mSharedResult == RESULT_SUCCESS) {
                 finish();
             } else {
                 dealResult();
