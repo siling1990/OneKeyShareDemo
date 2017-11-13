@@ -1,11 +1,77 @@
+# Android generated
+bin/
+gen/
+obj/
+
+# Ant
+# build.xml
+local.properties
+gradle-wrapper.properties
+lint.xml
+
+# Maven
+target/
+pom.xml.*
+release.properties
+
+# Eclipse
+.externalToolBuilders/
+.settings
+
+# IntelliJ
 *.iml
-.cradle
-/local.properties
-/.idea
-/.gradle
-/.idea/workspace.xml
-/.idea/libraries
+*.ipr
+*.iws
+.idea/
+out/
+
+# Mac 
 .DS_Store
-/build
-/captures
-.externalNativeBuild
+
+# svn
+.svn
+
+# vim
+*.swp
+
+# proguard
+proguard
+
+# Gradle
+.gradle
+build
+build/
+.idea
+gradle/
+gradlew
+gradlew.bat
+
+volley
+apptimize
+maindexlist.txt
+maindexlist-debug.txt
+AndroidJD-Phone/assets/config.properties
+aura.json
+aura-provided.json
+deeplinkMain.json
+navcenter.json
+deeplink.json
+AndroidJD-Phone/libs/armeabi/lib*.so
+AndroidJD-Phone/mapping/mapping_bundle*.txt
+aura-release.aar
+aura-debug.aar
+
+AndroidJD-Lib/libs/armeabi/lib*.so
+AndroidJD-Lib/prebuild_lib_d/armeabi/lib*.so
+AndroidJD-Lib/prebuild_lib_r/armeabi/lib*.so
+AndroidJD-CoreLib/src/main/libs/armeabi/lib*.so
+AndroidJD-ImageLoader/libs/armeabi/lib*.so
+#./AndroidJD-Phone/assets/jdreact/
+
+
+#commits
+AndroidJD-Phone/commits
+AndroidJD-Phone/provided-bundles
+AndroidJD-Phone/bundlesProperties/aura
+AndroidJD-Phone/mapping-configs
+captures/
